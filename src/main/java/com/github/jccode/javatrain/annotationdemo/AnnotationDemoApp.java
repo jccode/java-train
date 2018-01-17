@@ -11,4 +11,5 @@ public class AnnotationDemoApp {
         SpringApplication.run(AnnotationDemoApp.class, args);
     }
 
+
 }

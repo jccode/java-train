@@ -1,6 +1,7 @@
 package com.github.jccode.javatrain.annotationdemo;
 
 import com.github.jccode.javatrain.annotationdemo.annotation.EventHandler;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
