@@ -23,10 +23,12 @@ public class AnnotationDemoApp {
     @Bean
     public CommandLineRunner commandLineRunner() {
         return args -> {
+            /*
             Method[] methods = SampleHandlers.class.getDeclaredMethods();
             System.out.println("invoke");
             System.out.println(methods[0]);
             methods[0].invoke(sampleHandlers);
+            */
         };
     }
 
