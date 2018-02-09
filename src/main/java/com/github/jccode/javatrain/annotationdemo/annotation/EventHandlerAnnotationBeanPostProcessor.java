@@ -1,5 +1,7 @@
 package com.github.jccode.javatrain.annotationdemo.annotation;
 
+import com.github.jccode.javatrain.annotationdemo.config.EventHandlerEndpoint;
+import com.github.jccode.javatrain.annotationdemo.config.EventHandlerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
@@ -11,7 +13,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -30,8 +31,11 @@ public class EventHandlerAnnotationBeanPostProcessor
     private BeanFactory beanFactory;
     private final Set<Class<?>> nonAnnotatedClasses = Collections.newSetFromMap(new ConcurrentHashMap<>(64));
 
+    private EventHandlerRegistry eventHandlerRegistry = new EventHandlerRegistry();
+
     @Override
     public void afterSingletonsInstantiated() {
+        System.out.println("------ afterSingletonsInstantiated -------");
 
     }
 
@@ -42,6 +46,7 @@ public class EventHandlerAnnotationBeanPostProcessor
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        System.out.println("------- postProcessAfterInitialization -------");
         if (!nonAnnotatedClasses.contains(bean.getClass())) {
             Class<?> targetClass = AopUtils.getTargetClass(bean);
             Map<Method, EventHandler> annotatedMethods = MethodIntrospector.selectMethods(targetClass,
@@ -66,7 +71,11 @@ public class EventHandlerAnnotationBeanPostProcessor
 
     private void processEventHandler(EventHandler eventHandler, Method method, Object bean, String beanName) {
         String eventType = eventHandler.type();
-
+        EventHandlerEndpoint endpoint = new EventHandlerEndpoint();
+        endpoint.setEventType(eventType);
+        endpoint.setBean(bean);
+        endpoint.setMethod(method);
+        eventHandlerRegistry.registerEventHandler(eventType, endpoint);
     }
 
     @Override

@@ -1,2 +1,3 @@
 logging:
-  level: debug
+  level:
+    com.github.jccode.javatrain: debug

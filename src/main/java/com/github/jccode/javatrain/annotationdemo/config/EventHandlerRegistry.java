@@ -19,4 +19,8 @@ public class EventHandlerRegistry {
         return handlers.get(eventType);
     }
 
+    public int count() {
+        return handlers.size();
+    }
+
 }
