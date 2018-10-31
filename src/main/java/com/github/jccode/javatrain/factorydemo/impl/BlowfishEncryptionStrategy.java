@@ -1,12 +1,15 @@
 package com.github.jccode.javatrain.factorydemo.impl;
 
 import com.github.jccode.javatrain.factorydemo.EncryptionStrategy;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+@Service
 public class BlowfishEncryptionStrategy implements EncryptionStrategy {
+
     @Override
     public void encryptData(String plaintext) {
         System.out.println("\n-------Encrypting data using Blowfish algorithm-------");
