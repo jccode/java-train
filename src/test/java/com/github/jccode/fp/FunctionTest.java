@@ -30,4 +30,11 @@ public class FunctionTest {
         assertThat(triple.andThen(square).apply(2), equalTo(36));
         assertThat(Function.andThen(triple, square).apply(2), equalTo(36));
     }
+
+    @Test
+    public void testCurry() {
+        Function<Integer, Function<Integer, Integer>> multip = x -> y -> x * y;
+        Function<Integer, Integer> triple = multip.apply(3);
+        assertThat(triple.apply(3), equalTo(9));
+    }
 }
