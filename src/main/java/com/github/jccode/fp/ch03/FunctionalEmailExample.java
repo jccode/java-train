@@ -4,6 +4,8 @@ import com.github.jccode.fp.common.Effect;
 import com.github.jccode.fp.common.Executable;
 import com.github.jccode.fp.common.Function;
 import com.github.jccode.fp.common.Result;
+import static com.github.jccode.fp.common.Result.*;
+import static com.github.jccode.fp.common.Case.*;
 
 import java.util.regex.Pattern;
 
@@ -86,7 +88,28 @@ public class FunctionalEmailExample {
     }
 
     static class V3 {
+        final Pattern emailPattern = Pattern.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$");
+        final Effect<String> success = s -> System.out.println("Verification mail sent to " + s);
+        final Effect<String> failure = s ->  System.err.println("Error message logged: " + s);
 
+        final Function<String, Result<String>> emailChecker = email -> match (
+                mcase(() -> failure("email " + email + " is invalid.")),
+                mcase(() -> email == null                        , () -> failure("email must not be null")),
+                mcase(email::isEmpty                             , () -> failure("email must not be empty")),
+                mcase(() -> emailPattern.matcher(email).matches(), () -> success(email))
+        );
+
+        void validate(String email) {
+            emailChecker.apply(email).bind(success, failure);
+        }
+
+        public static void main(String[] args) {
+            V3 foo = new V3();
+            foo.validate("abc@hotmail.com");
+            foo.validate("abc");
+            foo.validate("");
+            foo.validate(null);
+        }
     }
 
 }
