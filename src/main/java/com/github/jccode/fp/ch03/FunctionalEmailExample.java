@@ -1,5 +1,7 @@
 package com.github.jccode.fp.ch03;
 
+import com.github.jccode.fp.common.Effect;
+import com.github.jccode.fp.common.Executable;
 import com.github.jccode.fp.common.Function;
 import com.github.jccode.fp.common.Result;
 
@@ -12,42 +14,79 @@ import java.util.regex.Pattern;
  */
 public class FunctionalEmailExample {
 
-    final Pattern emailPattern =
-            Pattern.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$");
+    static class V1 {
+        final Pattern emailPattern =
+                Pattern.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$");
 
-    final Function<String, Result<String>> emailChecker = email -> {
-        if (email == null) {
-            return Result.failure("email must not be null");
-        } else if (emailPattern.matcher(email).matches()) {
-            return Result.success(email);
-        } else {
-            return Result.failure("email " + email + " is invalid.");
+        final Function<String, Result<String>> emailChecker = email -> {
+            if (email == null) {
+                return Result.failure("email must not be null");
+            } else if (email.isEmpty()) {
+                return Result.failure("email must not be empty");
+            } else if (emailPattern.matcher(email).matches()) {
+                return Result.success(email);
+            } else {
+                return Result.failure("email " + email + " is invalid.");
+            }
+        };
+
+        Executable validate(String email) {
+            Result<String> result = emailChecker.apply(email);
+            return result instanceof Result.Success ?
+                    () -> sendVerificationMail(email) :
+                    () -> logError(((Result.Failure<String>) result).getErrorMessage());
         }
-    };
 
-    void testMail(String email) {
-        Result<String> result = emailChecker.apply(email);
-        if (result instanceof Result.Success) {
-            sendVerificationMail(email);
-        } else {
-            logError(((Result.Failure<String>) result).getErrorMessage());
+
+        void sendVerificationMail(String s) {
+            System.out.println("Verification mail sent to " + s);
+        }
+
+        private static void logError(String s) {
+            System.err.println("Error message logged: " + s);
+        }
+
+        public static void main(String[] args) {
+            V1 foo = new V1();
+            foo.validate("abc@hotmail.com").exec();
+            foo.validate("abc").exec();
+            foo.validate("").exec();
+            foo.validate(null).exec();
         }
     }
 
+    static class V2 {
+        final Pattern emailPattern = Pattern.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$");
+        final Effect<String> success = s -> System.out.println("Verification mail sent to " + s);
+        final Effect<String> failure = s ->  System.err.println("Error message logged: " + s);
 
-    void sendVerificationMail(String s) {
-        System.out.println("Verification mail sent to " + s);
+        final Function<String, Result<String>> emailChecker = email -> {
+            if (email == null) {
+                return Result.failure("email must not be null");
+            } else if (email.isEmpty()) {
+                return Result.failure("email must not be empty");
+            } else if (emailPattern.matcher(email).matches()) {
+                return Result.success(email);
+            } else {
+                return Result.failure("email " + email + " is invalid.");
+            }
+        };
+
+        void validate(String email) {
+            emailChecker.apply(email).bind(success, failure);
+        }
+
+        public static void main(String[] args) {
+            V2 foo = new V2();
+            foo.validate("abc@hotmail.com");
+            foo.validate("abc");
+            foo.validate("");
+            foo.validate(null);
+        }
     }
 
-    private static void logError(String s) {
-        System.err.println("Error message logged: " + s);
+    static class V3 {
+
     }
 
-    public static void main(String[] args) {
-        ImperativeEmailExample foo = new ImperativeEmailExample();
-        foo.testMail("abc@hotmail.com");
-        foo.testMail("abc");
-        foo.testMail("");
-        foo.testMail(null);
-    }
 }
