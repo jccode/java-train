@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
+import static com.github.jccode.fp.common.CollectionUtilities.*;
 
 
 /**
@@ -36,5 +37,19 @@ public class FunctionTest {
         Function<Integer, Function<Integer, Integer>> multip = x -> y -> x * y;
         Function<Integer, Integer> triple = multip.apply(3);
         assertThat(triple.apply(3), equalTo(9));
+
+        Function<String, Function<Integer, String>> f = x -> y -> String.valueOf(x) + y;
+        Function<Integer, String> foo = f.apply("foo");
+        assertThat(foo.apply(3), equalTo("foo3"));
+    }
+
+    @Test
+    public void testCollectionUtilities() {
+        Integer sum = foldLeft(list(1, 2, 3, 4, 5), 0, x -> y -> x + y);
+        assertThat(sum, equalTo(15));
+
+        assertThat(append(list(1,2,3), 4), equalTo(list(1,2,3,4)));
+        assertThat(prepend(list(1,2,3), 4), equalTo(list(4,1,2,3)));
+        assertThat(range(1,5), equalTo(list(1,2,3,4)));
     }
 }
