@@ -1,9 +1,7 @@
 package com.github.jccode.fp.ch03;
 
-import com.github.jccode.fp.common.Effect;
-import com.github.jccode.fp.common.Executable;
-import com.github.jccode.fp.common.Function;
-import com.github.jccode.fp.common.Result;
+import com.github.jccode.fp.common.*;
+
 import static com.github.jccode.fp.common.Result.*;
 import static com.github.jccode.fp.common.Case.*;
 
@@ -94,7 +92,7 @@ public class FunctionalEmailExample {
 
         final Function<String, Result<String>> emailChecker = email -> match (
                 mcase(() -> failure("email " + email + " is invalid.")),
-                mcase(() -> email == null                        , () -> failure("email must not be null")),
+                mcase(() -> null == email, () -> failure("email must not be null")),
                 mcase(email::isEmpty                             , () -> failure("email must not be empty")),
                 mcase(() -> emailPattern.matcher(email).matches(), () -> success(email))
         );
