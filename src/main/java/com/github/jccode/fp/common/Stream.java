@@ -15,6 +15,7 @@ public abstract class Stream<T> {
     public abstract Stream<T> take(int n);
     public abstract Stream<T> drop(int n);
     public abstract <U> U foldRight(U z, Function<T, Function<U, U>> f);
+    public abstract <U> U foldRight2(Supplier<U> z, Function<T, Function<Supplier<U>, U>> f);
     public abstract <U> U foldLeft(U z, Function<U, Function<T, U>> f);
 
     public List<T> toList() {
@@ -27,7 +28,17 @@ public abstract class Stream<T> {
                 sus(() -> toList(stream.tail(), acc.cons(stream.head())));
     }
 
-
+    /**
+     * TODO: 这个实现有问题,它依赖于foldRight的实现,而foldRight的实现又不是惰性的,会导致死循环.问题不在这个实现,而在foldRight的实现.
+     *
+     * @param f
+     * @param <U>
+     * @return
+     */
+    public <U> Stream<U> map(Function<T, U> f) {
+        return foldRight(empty(), x -> y -> cons(() -> f.apply(x), y));
+        //return foldRight2(Stream::empty, x -> y -> cons(() -> f.apply(x), y));
+    }
 
 
 
@@ -64,6 +75,11 @@ public abstract class Stream<T> {
         @Override
         public <U> U foldRight(U z, Function<T, Function<U, U>> f) {
             return z;
+        }
+
+        @Override
+        public <U> U foldRight2(Supplier<U> z, Function<T, Function<Supplier<U>, U>> f) {
+            return z.get();
         }
 
         @Override
@@ -159,6 +175,11 @@ public abstract class Stream<T> {
         }
 
         @Override
+        public <U> U foldRight2(Supplier<U> z, Function<T, Function<Supplier<U>, U>> f) {
+            return foldRight2(this, z, f).eval();
+        }
+
+        @Override
         public <U> U foldLeft(U z, Function<U, Function<T, U>> f) {
             //return tail().foldLeft(f.apply(z).apply(head()), f);
             return foldLeft(this, z, f).eval();
@@ -209,12 +230,22 @@ public abstract class Stream<T> {
         return cons(() -> seed, () -> iterate(f.apply(seed), f));
     }
 
+    /**
+     * TODO 这个版本仍然是不是栈安全的. 如何才能保证栈安全?
+     *
+     * @param s
+     * @param acc
+     * @param f
+     * @param <T>
+     * @param <U>
+     * @return
+     */
+    public static <T, U> TailCall<U> foldRight2(Stream<T> s, Supplier<U> acc, Function<T, Function<Supplier<U>, U>> f) {
+        return s.isEmpty() ?
+                ret(acc.get()) :
+                sus(() -> foldRight2(s.tail(), () -> f.apply(s.head()).apply(acc), f));
+    }
 
-//    public static <T, U> TailCall<U> foldRight(Stream<T> s, Supplier<U> acc, Function<T, Function<Supplier<U>, U>> f) {
-//        return s.isEmpty() ?
-//                ret(acc.get()) :
-//                sus(() -> foldRight(s.tail(), () -> f.apply(s.head()).apply(acc), f));
-//    }
 
     public static <T, U> TailCall<U> foldRight(Stream<T> s, U acc, Function<T, Function<U, U>> f) {
         return s.isEmpty() ?

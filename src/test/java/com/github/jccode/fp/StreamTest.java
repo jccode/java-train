@@ -30,8 +30,6 @@ public class StreamTest {
         System.out.println(Stream.repeat(5).take(5).toList());
 
         System.out.println(Stream.iterate(1, x -> x + 2).take(10).toList());
-
-
     }
 
     @Test
@@ -54,4 +52,17 @@ public class StreamTest {
         System.out.println(s1.foldRight(0, x -> y -> x + y));
     }
 
+    @Test
+    public void foldRight23Test() {
+        Stream<Integer> s1 = Stream.from(0).take(10000);
+        TailCall<Integer> t = Stream.foldRight2(s1, () -> 0, x -> sy -> x + sy.get());
+        System.out.println(t.eval());
+    }
+
+    @Test
+    public void mapTest() {
+        // TODO 这里会死循环; 因为 map 的实现有问题.
+        Stream<Integer> s1 = Stream.from(0).map(x -> x * 2).take(10);
+        System.out.println(s1);
+    }
 }
