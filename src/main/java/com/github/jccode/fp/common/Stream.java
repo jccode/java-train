@@ -1,5 +1,7 @@
 package com.github.jccode.fp.common;
 
+import static com.github.jccode.fp.common.TailCall.*;
+
 /**
  * Stream
  *
@@ -13,30 +15,22 @@ public abstract class Stream<T> {
     public abstract Stream<T> take(int n);
     public abstract Stream<T> drop(int n);
 
-    private final static Stream EMPTY = new Empty<>();
-
-    public static <T> Stream<T> empty() {
-        return EMPTY;
-    }
-
-    public static <T> Stream<T> cons(Supplier<T> head, Supplier<Stream<T>> tail) {
-        return new Cons<>(head, tail);
-    }
-
-    public static Stream<Integer> from(int i) {
-        return cons(() -> i, () -> from(i + 1));
-    }
-
     public List<T> toList() {
-        return toList(this);
+        return toList(this, List.list()).eval().reverse();
     }
 
-    private List<T> toList(Stream<T> stream) {
+    public TailCall<List<T>> toList(Stream<T> stream, List<T> acc) {
         return stream.isEmpty() ?
-                List.list() :
-                toList(stream.tail()).cons(stream.head());
+                ret(acc) :
+                sus(() -> toList(stream.tail(), acc.cons(stream.head())));
     }
 
+
+
+
+
+    // instances
+    // ------------------------
 
     private static class Empty<T> extends Stream<T> {
 
@@ -91,16 +85,101 @@ public abstract class Stream<T> {
             return false;
         }
 
+
+        /**
+         * Take
+         *
+         * take 不需要考虑栈安全; 因为take本身已经是惰性的.
+         * @param n
+         * @return
+         */
         @Override
         public Stream<T> take(int n) {
             return isEmpty() || n <= 0 ?
-                    this :
-                    Stream.cons(head, () -> take(n - 1));
+                    empty() :
+                    cons(head, () -> tail().take(n - 1));
+//            return take(this, n, empty()).eval();
+//            return take(this, n);
         }
 
+        /*
+        public <T> Stream<T> take(Stream<T> s, int n) {
+            return s.isEmpty() || n <= 0 ?
+                    Stream.empty() :
+                    Stream.cons(s::head, () -> take(s.tail(), n - 1));
+        }
+         */
+
+        /*
+        public <T> TailCall<Stream<T>> take(Stream<T> s, int n, Stream<T> acc) {
+            return s.isEmpty() || n <= 0 ?
+                    ret(acc) :
+                    sus(() -> take(s.tail(), n - 1, Stream.<T>cons(s::head, acc)));
+        }
+         */
+
+        /**
+         * Drop
+         *
+         * drop 必须考虑栈安全的问题
+         * @param n
+         * @return
+         */
         @Override
         public Stream<T> drop(int n) {
-            return null;
+//            return isEmpty() || n <= 0 ?
+//                    this :
+//                    tail().drop(n - 1);
+            return drop(this, n).eval();
         }
+
+        public <T> TailCall<Stream<T>> drop(Stream<T> s, int n) {
+            return s.isEmpty() || n <= 0 ?
+                    ret(s) :
+                    sus(() -> drop(s.tail(), n - 1));
+        }
+    }
+
+
+
+    // static methods
+    // ----------------
+
+    private final static Stream EMPTY = new Empty<>();
+
+    public static <T> Stream<T> empty() {
+        return EMPTY;
+    }
+
+    public static <T> Stream<T> cons(Supplier<T> head, Supplier<Stream<T>> tail) {
+        return new Cons<>(head, tail);
+    }
+
+    public static <T> Stream<T> cons(Supplier<T> head, Stream<T> tail) {
+        return new Cons<>(head, () -> tail);
+    }
+
+    public static Stream<Integer> from(int i) {
+        return cons(() -> i, () -> from(i + 1));
+    }
+
+    public static <T> Stream<T> stream(List<T> list) {
+        return list.reverse().foldLeft(empty(), st -> el -> cons(() -> el, st));
+    }
+
+    public static <T> Stream<T> stream(T... ts) {
+        return stream(List.list(ts));
+    }
+
+    public static <T> Stream<T> repeat(T t) {
+        return cons(() -> t, () -> repeat(t));
+    }
+
+    public static <T> Stream<T> iterate(Supplier<T> seed, Function<T, T> f) {
+        return cons(seed, () -> iterate(f.apply(seed.get()), f));
+    }
+
+    public static <T> Stream<T> iterate(T seed, Function<T, T> f) {
+        return cons(() -> seed, () -> iterate(f.apply(seed), f));
     }
 }
