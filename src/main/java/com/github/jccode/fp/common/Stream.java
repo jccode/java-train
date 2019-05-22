@@ -14,6 +14,8 @@ public abstract class Stream<T> {
     public abstract boolean isEmpty();
     public abstract Stream<T> take(int n);
     public abstract Stream<T> drop(int n);
+    public abstract <U> U foldRight(U z, Function<T, Function<U, U>> f);
+    public abstract <U> U foldLeft(U z, Function<U, Function<T, U>> f);
 
     public List<T> toList() {
         return toList(this, List.list()).eval().reverse();
@@ -57,6 +59,16 @@ public abstract class Stream<T> {
         @Override
         public Stream<T> drop(int n) {
             return this;
+        }
+
+        @Override
+        public <U> U foldRight(U z, Function<T, Function<U, U>> f) {
+            return z;
+        }
+
+        @Override
+        public <U> U foldLeft(U z, Function<U, Function<T, U>> f) {
+            return z;
         }
     }
 
@@ -133,11 +145,25 @@ public abstract class Stream<T> {
             return drop(this, n).eval();
         }
 
+
         public <T> TailCall<Stream<T>> drop(Stream<T> s, int n) {
             return s.isEmpty() || n <= 0 ?
                     ret(s) :
                     sus(() -> drop(s.tail(), n - 1));
         }
+
+        @Override
+        public <U> U foldRight(U z, Function<T, Function<U, U>> f) {
+            //return f.apply(head()).apply(() -> tail().foldRight(z, f));
+            return foldRight(this, z, f).eval();
+        }
+
+        @Override
+        public <U> U foldLeft(U z, Function<U, Function<T, U>> f) {
+            //return tail().foldLeft(f.apply(z).apply(head()), f);
+            return foldLeft(this, z, f).eval();
+        }
+
     }
 
 
@@ -181,5 +207,25 @@ public abstract class Stream<T> {
 
     public static <T> Stream<T> iterate(T seed, Function<T, T> f) {
         return cons(() -> seed, () -> iterate(f.apply(seed), f));
+    }
+
+
+//    public static <T, U> TailCall<U> foldRight(Stream<T> s, Supplier<U> acc, Function<T, Function<Supplier<U>, U>> f) {
+//        return s.isEmpty() ?
+//                ret(acc.get()) :
+//                sus(() -> foldRight(s.tail(), () -> f.apply(s.head()).apply(acc), f));
+//    }
+
+    public static <T, U> TailCall<U> foldRight(Stream<T> s, U acc, Function<T, Function<U, U>> f) {
+        return s.isEmpty() ?
+                ret(acc) :
+                sus(() -> foldRight(s.tail(), f.apply(s.head()).apply(acc), f));
+    }
+
+
+    public static <T, U> TailCall<U> foldLeft(Stream<T> s, U acc, Function<U, Function<T, U>> f) {
+        return s.isEmpty() ?
+                ret(acc) :
+                sus(() -> foldLeft(s.tail(), f.apply(acc).apply(s.head()), f));
     }
 }
