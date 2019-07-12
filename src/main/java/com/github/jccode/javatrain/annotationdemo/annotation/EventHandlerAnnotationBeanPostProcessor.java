@@ -10,6 +10,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -25,13 +27,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class EventHandlerAnnotationBeanPostProcessor
-        implements BeanPostProcessor, SmartInitializingSingleton, BeanFactoryAware, Ordered {
+        implements BeanPostProcessor, SmartInitializingSingleton, ApplicationContextAware, Ordered {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private BeanFactory beanFactory;
     private final Set<Class<?>> nonAnnotatedClasses = Collections.newSetFromMap(new ConcurrentHashMap<>(64));
 
+    private ApplicationContext applicationContext;
     private EventHandlerRegistry eventHandlerRegistry = new EventHandlerRegistry();
+
 
     @Override
     public void afterSingletonsInstantiated() {
@@ -78,13 +81,14 @@ public class EventHandlerAnnotationBeanPostProcessor
         eventHandlerRegistry.registerEventHandler(eventType, endpoint);
     }
 
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        this.beanFactory = beanFactory;
-    }
 
     @Override
     public int getOrder() {
         return LOWEST_PRECEDENCE;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }
